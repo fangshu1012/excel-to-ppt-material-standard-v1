@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PPT生成工具 - 独立版</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 30px;
+      text-align: center;
+      color: white;
+    }
+    
+    .header h1 {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+    
+    .header p {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+    
+    .content {
+      padding: 30px;
+    }
+    
+    .formula-section {
+      background: #fafafa;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    
+    .section-header {
+      margin-bottom: 16px;
+    }
+    
+    .section-header h3 {
+      font-size: 16px;
+      color: #303133;
+      margin-bottom: 6px;
+    }
+    
+    .section-header p {
+      font-size: 13px;
+      color: #909399;
+    }
+    
+    .formula-inputs {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    
+    .formula-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .formula-label {
+      font-size: 14px;
+      color: #606266;
+      font-weight: 500;
+      min-width: 110px;
+      text-align: right;
+    }
+    
+    .formula-input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid #dcdfe6;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: monospace;
+      background: white;
+      transition: all 0.3s ease;
+    }
+    
+    .formula-input:focus {
+      outline: none;
+      border-color: #409eff;
+      box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+    }
+    
+    .btn-reset-formula {
+      padding: 10px 14px;
+      background: #f5f7fa;
+      border: 1px solid #dcdfe6;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-reset-formula:hover {
+      background: #e4e7ed;
+    }
+    
+    .formula-help {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding-top: 16px;
+      border-top: 1px dashed #e4e7ed;
+    }
+    
+    .help-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: #606266;
+      margin-bottom: 8px;
+    }
+    
+    .help-fields, .help-ops {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    
+    .field-tag {
+      padding: 4px 10px;
+      background: #e6f7ff;
+      color: #1890ff;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    
+    .op-tag {
+      padding: 4px 10px;
+      background: #f6ffed;
+      color: #52c41a;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    
+    .upload-item {
+      margin-bottom: 24px;
+    }
+    
+    .upload-label {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #303133;
+    }
+    
+    .template-selection {
+      display: flex;
+      align-items: stretch;
+      gap: 16px;
+    }
+    
+    .template-option {
+      flex: 1;
+      padding: 20px;
+      border: 2px dashed #dcdfe6;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #fafafa;
+    }
+    
+    .template-option:hover {
+      border-color: #667eea;
+      background: #f0f5ff;
+    }
+    
+    .template-option.active {
+      border: 2px solid #667eea;
+      background: #f0f5ff;
+    }
+    
+    .template-icon {
+      font-size: 32px;
+    }
+    
+    .template-info {
+      flex: 1;
+    }
+    
+    .template-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #303133;
+      margin-bottom: 4px;
+    }
+    
+    .template-desc {
+      font-size: 12px;
+      color: #909399;
+    }
+    
+    .template-status {
+      font-size: 12px;
+      font-weight: 600;
+      color: #67c23a;
+    }
+    
+    .template-divider {
+      width: 2px;
+      background: #e4e7ed;
+      margin: 20px 0;
+    }
+    
+    .upload-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      background: #fafafa;
+      border: 2px dashed #dcdfe6;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .upload-area:hover, .upload-area.drag-over {
+      border-color: #667eea;
+      background: #f0f5ff;
+    }
+    
+    .upload-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+    
+    .upload-text {
+      font-size: 14px;
+      color: #606266;
+      margin-bottom: 8px;
+    }
+    
+    .upload-hint {
+      font-size: 12px;
+      color: #c0c4cc;
+    }
+    
+    .btn-remove {
+      margin-top: 10px;
+      padding: 6px 16px;
+      background: #fef0f0;
+      color: #f56c6c;
+      border: 1px solid #fbc4c4;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    
+    .btn-remove:hover {
+      background: #f04040;
+      color: white;
+    }
+    
+    .checkbox-item {
+      margin-bottom: 20px;
+    }
+    
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+    
+    .checkbox-label input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+    }
+    
+    .checkbox-text {
+      font-size: 14px;
+      color: #303133;
+    }
+    
+    .hint-box {
+      margin-top: 20px;
+      padding: 12px 16px;
+      background: #fff7e6;
+      border: 1px solid #ffd591;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #fa8c16;
+      line-height: 1.6;
+    }
+    
+    .btn-start {
+      width: 100%;
+      padding: 16px 48px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 10px;
+    }
+    
+    .btn-start:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-start:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .progress-container {
+      margin-top: 10px;
+    }
+    
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: #e4e7ed;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      transition: width 0.3s ease;
+    }
+    
+    .progress-text {
+      margin-top: 6px;
+      font-size: 13px;
+      color: #606266;
+    }
+    
+    .match-info {
+      margin-top: 10px;
+      padding: 8px 14px;
+      background: #f0f9eb;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #67c23a;
+    }
+    
+    .processing-section {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 80px;
+    }
+    
+    .processing-spinner {
+      text-align: center;
+    }
+    
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .result-section {
+      text-align: center;
+      padding: 40px;
+    }
+    
+    .result-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+    }
+    
+    .result-info h3 {
+      font-size: 24px;
+      color: #303133;
+      margin-bottom: 12px;
+    }
+    
+    .result-info p {
+      font-size: 14px;
+      color: #606266;
+      margin-bottom: 8px;
+    }
+    
+    .btn-download {
+      padding: 14px 40px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 20px;
+    }
+    
+    .btn-download:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-restart {
+      padding: 12px 24px;
+      background: #f5f5f5;
+      color: #606266;
+      border: 1px solid #dcdfe6;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 16px;
+    }
+    
+    .btn-restart:hover {
+      background: #e4e7ed;
+    }
+    
+    .unmatched-section {
+      margin-top: 24px;
+      padding: 20px;
+      background: #fff7e6;
+      border-radius: 8px;
+      border: 1px solid #ffe58f;
+      text-align: left;
+    }
+    
+    .unmatched-section h4 {
+      font-size: 15px;
+      color: #d48806;
+      margin-bottom: 12px;
+    }
+    
+    .unmatched-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .unmatched-code {
+      padding: 4px 10px;
+      background: #fff;
+      border: 1px solid #ffd666;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #873800;
+    }
+    
+    .unmatched-hint {
+      font-size: 13px;
+      color: #9a6b00;
+    }
+    
+    input[type="file"] {
+      display: none;
+    }
+    
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📄 PPT生成工具 - 独立版</h1>
+      <p>上传占位符模板和Excel数据，批量生成产品展示PPT</p>
+    </div>
+    
+    <div class="content" id="upload-section">
+      <div class="formula-section">
+        <div class="section-header">
+          <h3>🧮 报价计算公式（可选）</h3>
+          <p>自定义报价计算规则，支持使用字段名和数学运算</p>
+        </div>
+        
+        <div class="formula-inputs">
+          <div class="formula-item">
+            <label class="formula-label">供应商报价 =</label>
+            <input id="supplierPriceInput" class="formula-input" placeholder="供应商成本价 / 0.75" value="供应商成本价 / 0.75" />
+            <button class="btn-reset-formula" onclick="resetFormula('supplierPrice')">↺</button>
+          </div>
+          
+          <div class="formula-item">
+            <label class="formula-label">一件代发报价 =</label>
+            <input id="dropshipPriceInput" class="formula-input" placeholder="一件代发成本价 / 0.75" value="一件代发成本价 / 0.75" />
+            <button class="btn-reset-formula" onclick="resetFormula('dropshipPrice')">↺</button>
+          </div>
+        </div>
+        
+        <div class="formula-help">
+          <div>
+            <div class="help-title">📝 可用字段</div>
+            <div class="help-fields">
+              <span class="field-tag">供应商成本价</span>
+              <span class="field-tag">一件代发成本价</span>
+              <span class="field-tag">市场价</span>
+            </div>
+          </div>
+          <div>
+            <div class="help-title">⚙️ 支持的运算</div>
+            <div class="help-ops">
+              <span class="op-tag">+ 加法</span>
+              <span class="op-tag">- 减法</span>
+              <span class="op-tag">* 乘法</span>
+              <span class="op-tag">/ 除法</span>
+              <span class="op-tag">() 括号</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="upload-item">
+        <label class="upload-label">📄 PPT占位符模板</label>
+        <input id="templateInput" type="file" accept=".pptx" onchange="onTemplateSelect(event)" />
+        <div class="template-selection">
+          <div id="defaultTemplateOption" class="template-option active" onclick="useDefaultTemplate()">
+            <div class="template-icon">📄</div>
+            <div class="template-info">
+              <div class="template-name">默认模板</div>
+              <div class="template-desc">内置标准模板</div>
+            </div>
+            <div id="templateStatus" class="template-status hidden">✓ 已加载</div>
+          </div>
+          <div class="template-divider"></div>
+          <div id="customTemplateOption" class="template-option" onclick="document.getElementById('templateInput').click()">
+            <div class="template-icon">⬆️</div>
+            <div class="template-info">
+              <div class="template-name" id="templateFileName">上传自定义模板</div>
+              <div class="template-desc">点击上传</div>
+            </div>
+          </div>
+        </div>
+        <button id="removeTemplateBtn" class="btn-remove hidden" onclick="removeTemplate()">× 移除自定义模板</button>
+      </div>
+
+      <div class="upload-item">
+        <label class="upload-label">📊 Excel数据文件</label>
+        <input id="excelInput" type="file" accept=".xlsx,.xls,.csv" onchange="onExcelSelect(event)" />
+        <div class="upload-area" onclick="document.getElementById('excelInput').click()">
+          <div class="upload-icon">📁</div>
+          <div class="upload-text" id="excelFileName">点击上传Excel文件</div>
+          <div class="upload-hint">支持 .xlsx, .xls, .csv 格式</div>
+        </div>
+        <button id="removeExcelBtn" class="btn-remove hidden" onclick="removeExcel()">× 移除文件</button>
+      </div>
+
+      <div class="upload-item">
+        <label class="upload-label">🖼️ 产品图片压缩包（可选）</label>
+        <input id="imageInput" type="file" accept=".zip" onchange="onImageSelect(event)" />
+        <div class="upload-area" onclick="document.getElementById('imageInput').click()">
+          <div class="upload-icon">📦</div>
+          <div class="upload-text" id="imageFileName">点击上传图片压缩包</div>
+          <div class="upload-hint">支持 .zip 格式，图片文件名需包含产品编号（如 SSP20260408094.png）</div>
+        </div>
+        <button id="removeImageBtn" class="btn-remove hidden" onclick="removeImage()">× 移除文件</button>
+        <div id="matchInfo" class="match-info hidden"></div>
+        <div id="imageProgressContainer" class="progress-container hidden">
+          <div class="progress-bar">
+            <div id="imageProgressFill" class="progress-fill"></div>
+          </div>
+          <div id="imageProgressText" class="progress-text"></div>
+        </div>
+      </div>
+
+      <div class="checkbox-item">
+        <label class="checkbox-label">
+          <input type="checkbox" id="includeImages" />
+          <span class="checkbox-text">将图片嵌入PPT（按编号匹配）</span>
+        </label>
+      </div>
+
+      <div class="hint-box">
+        💡 温馨提示：本工具会读取占位符模板，替换占位符后生成PPT文件。支持的占位符：{{品名}}、{{编号}}、{{营销文案}}、{{产品参数}}、{{市场价}}、{{供货价}}、{{一件代发报价}}、{{京东/天猫链接}}、{{备注}}
+      </div>
+
+      <button class="btn-start" onclick="generatePPT()">
+        📄 生成PPT展示文件
+      </button>
+    </div>
+    
+    <div class="content hidden" id="processing-section">
+      <div class="processing-spinner">
+        <div class="spinner"></div>
+        <p id="processingStep">正在处理PPT...</p>
+        <div id="pptProgressContainer" class="progress-container hidden">
+          <div class="progress-bar">
+            <div id="pptProgressFill" class="progress-fill"></div>
+          </div>
+          <div id="pptProgressText" class="progress-text"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="content hidden" id="result-section">
+      <div class="result-section">
+        <div class="result-icon">🎉</div>
+        <div class="result-info">
+          <h3>PPT生成成功！</h3>
+          <p id="resultDataCount"></p>
+          <p id="resultImageMatch"></p>
+          <p id="resultDebug"></p>
+        </div>
+        <button class="btn-download" onclick="downloadPPT()">
+          📥 下载PPT
+        </button>
+        <button class="btn-restart" onclick="restart()">
+          🔄 重新开始
+        </button>
+      </div>
+      <div id="unmatchedSection" class="unmatched-section hidden">
+        <h4>⚠️ 未匹配到图片的商品编号</h4>
+        <div id="unmatchedList" class="unmatched-list"></div>
+        <p class="unmatched-hint">提示：请检查这些商品编号是否在图片压缩包中存在对应图片文件</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let templateFile = null;
+    let excelFile = null;
+    let imageFile = null;
+    let templateZip = null;
+    let sourceData = [];
+    let imageMap = {};
+    let imageRawData = {};
+    let generatedPptBlob = null;
+    let isImagesReady = false;
+    let matchedImages = 0;
+    let unmatchedCodes = [];
+    
+    const fieldMapping = {
+      '供应商成本价': 'supplierCost',
+      '一件代发成本价': 'dropshipCost',
+      '市场价': 'marketPrice'
+    };
+    
+    function resetFormula(field) {
+      if (field === 'supplierPrice') {
+        document.getElementById('supplierPriceInput').value = '供应商成本价 / 0.75';
+      } else {
+        document.getElementById('dropshipPriceInput').value = '一件代发成本价 / 0.75';
+      }
+    }
+    
+    function evaluateFormula(formula, values) {
+      if (!formula || formula.trim() === '') {
+        return '';
+      }
+      
+      let expr = formula;
+      for (const [fieldName, valueKey] of Object.entries(fieldMapping)) {
+        const value = values[valueKey] || 0;
+        expr = expr.replace(new RegExp(fieldName, 'g'), value);
+      }
+      
+      try {
+        const result = new Function(`return ${expr}`)();
+        return Math.round(result);
+      } catch (error) {
+        console.error('公式解析错误:', error);
+        return '';
+      }
+    }
+    
+    async function loadTemplateFromFile(file, isDefault = false) {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        templateZip = await JSZip.loadAsync(arrayBuffer);
+        document.getElementById('templateStatus').classList.remove('hidden');
+        console.log(isDefault ? '默认模板' : '自定义模板', '加载成功！');
+      } catch (error) {
+        console.error('加载模板失败:', error);
+        alert('加载模板失败: ' + error.message);
+      }
+    }
+    
+    async function loadDefaultTemplate() {
+      try {
+        const defaultTemplate = await createDefaultTemplate();
+        templateZip = defaultTemplate;
+        document.getElementById('templateStatus').classList.remove('hidden');
+        console.log('默认模板已创建');
+      } catch (error) {
+        console.error('创建默认模板失败:', error);
+      }
+    }
+    
+    async function createDefaultTemplate() {
+      const zip = new JSZip();
+      
+      zip.file('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>
+  <Override PartName="/ppt/slides/slide1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>
+  <Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>
+  <Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/>
+</Types>`);
+
+      zip.file('_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/>
+</Relationships>`);
+
+      zip.file('ppt/_rels/presentation.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="slideLayouts/slideLayout1.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide1.xml"/>
+</Relationships>`);
+
+      zip.file('ppt/presentation.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:presentation xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <p:sldMasterIdLst>
+    <p:sldMasterId id="256" r:id="rId1"/>
+  </p:sldMasterIdLst>
+  <p:sldLayoutIdLst>
+    <p:sldLayoutId id="257" r:id="rId2"/>
+  </p:sldLayoutIdLst>
+  <p:sldIdLst>
+    <p:sldId id="256" r:id="rId3"/>
+  </p:sldIdLst>
+  <p:notesMasterIdLst/>
+</p:presentation>`);
+
+      zip.file('ppt/slideMasters/slideMaster1.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sldMaster xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+  <p:cSld>
+    <p:spTree>
+      <p:nvGrpSpPr>
+        <p:cNvPr id="1" name=""/>
+        <p:cNvGrpSpPr/>
+        <p:nvPr/>
+      </p:nvGrpSpPr>
+      <p:grpSpPr>
+        <a:xfrm>
+          <a:off x="0" y="0"/>
+          <a:ext cx="0" cy="0"/>
+          <a:chOff x="0" y="0"/>
+          <a:chExt cx="0" cy="0"/>
+        </a:xfrm>
+      </p:grpSpPr>
+    </p:spTree>
+  </p:cSld>
+  <p:clrMapOvr>
+    <a:masterClrMapping/>
+  </p:clrMapOvr>
+</p:sldMaster>`);
+
+      zip.file('ppt/slideLayouts/slideLayout1.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sldLayout xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+  <p:cSld>
+    <p:spTree>
+      <p:nvGrpSpPr>
+        <p:cNvPr id="1" name=""/>
+        <p:cNvGrpSpPr/>
+        <p:nvPr/>
+      </p:nvGrpSpPr>
+      <p:grpSpPr>
+        <a:xfrm>
+          <a:off x="0" y="0"/>
+          <a:ext cx="0" cy="0"/>
+          <a:chOff x="0" y="0"/>
+          <a:chExt cx="0" cy="0"/>
+        </a:xfrm>
+      </p:grpSpPr>
+    </p:spTree>
+  </p:cSld>
+  <p:clrMapOvr>
+    <a:masterClrMapping/>
+  </p:clrMapOvr>
+</p:sldLayout>`);
+
+      zip.file('ppt/slides/slide1.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+  <p:cSld>
+    <p:spTree>
+      <p:nvGrpSpPr>
+        <p:cNvPr id="1" name=""/>
+        <p:cNvGrpSpPr/>
+        <p:nvPr/>
+      </p:nvGrpSpPr>
+      <p:grpSpPr>
+        <a:xfrm>
+          <a:off x="0" y="0"/>
+          <a:ext cx="0" cy="0"/>
+          <a:chOff x="0" y="0"/>
+          <a:chExt cx="0" cy="0"/>
+        </a:xfrm>
+      </p:grpSpPr>
+      <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="2" name="Title"/>
+          <p:cNvSpPr/>
+          <p:nvPr/>
+        </p:nvSpPr>
+        <p:spPr>
+          <a:xfrm>
+            <a:off x="1134000" y="1134000"/>
+            <a:ext cx="7086600" cy="914400"/>
+          </a:xfrm>
+          <a:prstGeom prst="rect">
+            <a:avLst/>
+          </a:prstGeom>
+          <a:noFill/>
+          <a:ln>
+            <a:noFill/>
+          </a:ln>
+        </p:spPr>
+        <p:txBody>
+          <a:bodyPr/>
+          <a:lstStyle/>
+          <a:p>
+            <a:r>
+              <a:t>{{品名}}</a:t>
+            </a:r>
+          </a:p>
+        </p:txBody>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="3" name="编号"/>
+          <p:cNvSpPr/>
+          <p:nvPr/>
+        </p:nvSpPr>
+        <p:spPr>
+          <a:xfrm>
+            <a:off x="1134000" y="2286000"/>
+            <a:ext cx="7086600" cy="457200"/>
+          </a:xfrm>
+          <a:prstGeom prst="rect">
+            <a:avLst/>
+          </a:prstGeom>
+          <a:noFill/>
+          <a:ln>
+            <a:noFill/>
+          </a:ln>
+        </p:spPr>
+        <p:txBody>
+          <a:bodyPr/>
+          <a:lstStyle/>
+          <a:p>
+            <a:r>
+              <a:t>编号：{{编号}}</a:t>
+            </a:r>
+          </a:p>
+        </p:txBody>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="4" name="卖点"/>
+          <p:cNvSpPr/>
+          <p:nvPr/>
+        </p:nvSpPr>
+        <p:spPr>
+          <a:xfrm>
+            <a:off x="1134000" y="3048000"/>
+            <a:ext cx="7086600" cy="914400"/>
+          </a:xfrm>
+          <a:prstGeom prst="rect">
+            <a:avLst/>
+          </a:prstGeom>
+          <a:noFill/>
+          <a:ln>
+            <a:noFill/>
+          </a:ln>
+        </p:spPr>
+        <p:txBody>
+          <a:bodyPr/>
+          <a:lstStyle/>
+          <a:p>
+            <a:r>
+              <a:t>{{营销文案}}</a:t>
+            </a:r>
+          </a:p>
+        </p:txBody>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="5" name="参数"/>
+          <p:cNvSpPr/>
+          <p:nvPr/>
+        </p:nvSpPr>
+        <p:spPr>
+          <a:xfrm>
+            <a:off x="1134000" y="4267200"/>
+            <a:ext cx="7086600" cy="914400"/>
+          </a:xfrm>
+          <a:prstGeom prst="rect">
+            <a:avLst/>
+          </a:prstGeom>
+          <a:noFill/>
+          <a:ln>
+            <a:noFill/>
+          </a:ln>
+        </p:spPr>
+        <p:txBody>
+          <a:bodyPr/>
+          <a:lstStyle/>
+          <a:p>
+            <a:r>
+              <a:t>参数：{{产品参数}}</a:t>
+            </a:r>
+          </a:p>
+        </p:txBody>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="6" name="价格"/>
+          <p:cNvSpPr/>
+          <p:nvPr/>
+        </p:nvSpPr>
+        <p:spPr>
+          <a:xfrm>
+            <a:off x="1134000" y="5486400"/>
+            <a:ext cx="7086600" cy="914400"/>
+          </a:xfrm>
+          <a:prstGeom prst="rect">
+            <a:avLst/>
+          </a:prstGeom>
+          <a:noFill/>
+          <a:ln>
+            <a:noFill/>
+          </a:ln>
+        </p:spPr>
+        <p:txBody>
+          <a:bodyPr/>
+          <a:lstStyle/>
+          <a:p>
+            <a:r>
+              <a:t>市场价：{{市场价}} | 供货价：{{供货价}} | 代发价：{{一件代发报价}}</a:t>
+            </a:r>
+          </a:p>
+        </p:txBody>
+      </p:sp>
+    </p:spTree>
+  </p:cSld>
+</p:sld>`);
+
+      zip.file('ppt/slides/_rels/slide1.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>`);
+
+      return zip;
+    }
+    
+    function onTemplateSelect(event) {
+      const file = event.target.files[0];
+      if (file) {
+        templateFile = file;
+        document.getElementById('templateFileName').textContent = file.name;
+        document.getElementById('defaultTemplateOption').classList.remove('active');
+        document.getElementById('customTemplateOption').classList.add('active');
+        document.getElementById('templateStatus').classList.add('hidden');
+        document.getElementById('removeTemplateBtn').classList.remove('hidden');
+        loadTemplateFromFile(file, false);
+      }
+    }
+    
+    function useDefaultTemplate() {
+      templateFile = null;
+      document.getElementById('templateFileName').textContent = '上传自定义模板';
+      document.getElementById('customTemplateOption').classList.remove('active');
+      document.getElementById('defaultTemplateOption').classList.add('active');
+      document.getElementById('removeTemplateBtn').classList.add('hidden');
+      if (!templateZip) {
+        loadDefaultTemplate();
+      } else {
+        document.getElementById('templateStatus').classList.remove('hidden');
+      }
+    }
+    
+    function removeTemplate() {
+      templateFile = null;
+      document.getElementById('templateInput').value = '';
+      useDefaultTemplate();
+    }
+    
+    function onExcelSelect(event) {
+      const file = event.target.files[0];
+      if (file) {
+        excelFile = file;
+        document.getElementById('excelFileName').textContent = file.name;
+        document.getElementById('removeExcelBtn').classList.remove('hidden');
+        parseExcel(file);
+      }
+    }
+    
+    function removeExcel() {
+      excelFile = null;
+      sourceData = [];
+      document.getElementById('excelInput').value = '';
+      document.getElementById('excelFileName').textContent = '点击上传Excel文件';
+      document.getElementById('removeExcelBtn').classList.add('hidden');
+    }
+    
+    function parseExcel(file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+          if (jsonData.length > 1) {
+            const headers = jsonData[0];
+            sourceData = jsonData.slice(1).map(row => {
+              const item = {};
+              headers.forEach((header, index) => {
+                if (header) {
+                  item[header] = row[index] || '';
+                }
+              });
+              return item;
+            });
+            console.log('解析Excel完成，共', sourceData.length, '条数据');
+          }
+        } catch (error) {
+          console.error('解析Excel失败:', error);
+          alert('解析Excel文件失败: ' + error.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+    
+    function onImageSelect(event) {
+      const file = event.target.files[0];
+      if (file) {
+        imageFile = file;
+        document.getElementById('imageFileName').textContent = file.name;
+        document.getElementById('removeImageBtn').classList.remove('hidden');
+        document.getElementById('matchInfo').classList.add('hidden');
+        
+        const progressContainer = document.getElementById('imageProgressContainer');
+        progressContainer.classList.remove('hidden');
+        
+        extractImages(file);
+      }
+    }
+    
+    function removeImage() {
+      imageFile = null;
+      imageMap = {};
+      imageRawData = {};
+      matchedImages = 0;
+      document.getElementById('imageInput').value = '';
+      document.getElementById('imageFileName').textContent = '点击上传图片压缩包';
+      document.getElementById('removeImageBtn').classList.add('hidden');
+      document.getElementById('matchInfo').classList.add('hidden');
+      document.getElementById('imageProgressContainer').classList.add('hidden');
+    }
+    
+    async function extractImages(zipFile) {
+      try {
+        const zip = await JSZip.loadAsync(zipFile);
+        const newImageMap = {};
+        const newRawData = {};
+        
+        const imageFiles = [];
+        zip.forEach((relativePath, file) => {
+          if (!file.dir && /\.(png|jpg|jpeg|gif)$/i.test(relativePath)) {
+            const fileName = relativePath.split('/').pop();
+            if (fileName.startsWith('._')) {
+              return;
+            }
+            const baseName = fileName.replace(/\.(png|jpg|jpeg|gif)$/i, '');
+            const codeMatch = baseName.match(/(SSP\d+)/);
+            const productCode = codeMatch ? codeMatch[1] : baseName;
+            const imgType = fileName.toLowerCase().endsWith('.png') ? 'png' : 'jpeg';
+            imageFiles.push({ file, fileName, productCode, imgType });
+          }
+        });
+        
+        const total = imageFiles.length;
+        let current = 0;
+        
+        for (const item of imageFiles) {
+          const base64 = await item.file.async('base64');
+          newImageMap[item.productCode] = `data:image/${item.imgType};base64,${base64}`;
+          
+          const uint8array = await item.file.async('uint8array');
+          newRawData[item.productCode] = {
+            data: uint8array,
+            type: item.imgType
+          };
+          
+          current++;
+          document.getElementById('imageProgressFill').style.width = `${(current / total) * 100}%`;
+          document.getElementById('imageProgressText').textContent = `正在解析图片: ${current} / ${total}`;
+        }
+        
+        imageMap = newImageMap;
+        imageRawData = newRawData;
+        isImagesReady = true;
+        
+        document.getElementById('imageProgressContainer').classList.add('hidden');
+        document.getElementById('matchInfo').textContent = `✅ 已加载 ${Object.keys(newImageMap).length} 张图片`;
+        document.getElementById('matchInfo').classList.remove('hidden');
+        
+        matchImages();
+      } catch (error) {
+        console.error('解析图片失败:', error);
+        alert('解析图片失败: ' + error.message);
+      }
+    }
+    
+    function matchImages() {
+      let count = 0;
+      sourceData.forEach((item) => {
+        const code = item['编号'] || '';
+        if (code && imageRawData[code]) {
+          count++;
+        }
+      });
+      matchedImages = count;
+    }
+    
+    function escapeRegex(str) {
+      return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+    
+    function smartReplaceAllPlaceholders(content, placeholderMap, dataRow, getValue) {
+      let modified = content;
+      let totalCount = 0;
+      
+      for (const [placeholder, field] of Object.entries(placeholderMap)) {
+        const value = getValue(dataRow, field);
+        if (modified.includes(placeholder)) {
+          const escapedPlaceholder = escapeRegex(placeholder);
+          const regex = new RegExp(escapedPlaceholder, 'g');
+          const matches = modified.match(regex);
+          if (matches) {
+            const count = matches.length;
+            modified = modified.replace(regex, `<a:t>${value}</a:t>`);
+            totalCount += count;
+          }
+        }
+      }
+      
+      return { content: modified, count: totalCount };
+    }
+    
+    async function generatePPT() {
+      if (!templateZip) {
+        alert('模板未加载，请等待默认模板加载完成');
+        return;
+      }
+      if (!excelFile && sourceData.length === 0) {
+        alert('请上传Excel数据文件');
+        return;
+      }
+      
+      const includeImages = document.getElementById('includeImages').checked;
+      if (includeImages && !isImagesReady) {
+        alert('图片正在解析中，请稍候...');
+        return;
+      }
+      
+      document.getElementById('upload-section').classList.add('hidden');
+      document.getElementById('processing-section').classList.remove('hidden');
+      document.getElementById('result-section').classList.add('hidden');
+      
+      document.getElementById('processingStep').textContent = '正在处理PPT...';
+      document.getElementById('pptProgressContainer').classList.add('hidden');
+      
+      try {
+        let dataRows = sourceData.length ? sourceData : [];
+        const totalSlides = dataRows.length;
+        
+        if (totalSlides === 0) {
+          alert('没有数据可处理');
+          return;
+        }
+        
+        document.getElementById('pptProgressContainer').classList.remove('hidden');
+        document.getElementById('pptProgressFill').style.width = '0%';
+        
+        const placeholderMap = {
+          '{{品名}}': '名称',
+          '{{编号}}': '编号',
+          '{{营销文案}}': '一句话卖点',
+          '{{卖点摘要}}': '一句话卖点',
+          '{{产品参数}}': '产品参数',
+          '{{市场价}}': '市场价',
+          '{{供货价}}': '供货价报价',
+          '{{一件代发报价}}': '一件代发报价',
+          '{{一件代发价}}': '一件代发报价',
+          '{{京东/天猫链接}}': '京东/天猫链接',
+          '{{备注}}': '备注'
+        };
+        
+        const supplierPriceFormula = document.getElementById('supplierPriceInput').value;
+        const dropshipPriceFormula = document.getElementById('dropshipPriceInput').value;
+        
+        const getValue = function(row, field) {
+          if (!field || !row) return '';
+          
+          if (field === '供货价报价') {
+            const 供货价 = row['供货价'] || row['供应商报价1#'] || row['供应商报价1'] || '';
+            const 市场价 = row['市场价'] || '';
+            const formulaValues = {
+              supplierCost: parseFloat(供货价) || 0,
+              dropshipCost: 0,
+              marketPrice: parseFloat(市场价) || 0
+            };
+            const result = evaluateFormula(supplierPriceFormula, formulaValues);
+            return result ? String(result) : '';
+          }
+          
+          if (field === '一件代发报价') {
+            const 一件代发成本价 = row['一件代发成本价'] || row['供货价（一件代发）'] || '';
+            const 市场价 = row['市场价'] || '';
+            const formulaValues = {
+              supplierCost: 0,
+              dropshipCost: parseFloat(一件代发成本价) || 0,
+              marketPrice: parseFloat(市场价) || 0
+            };
+            const result = evaluateFormula(dropshipPriceFormula, formulaValues);
+            return result ? String(result) : '';
+          }
+          
+          let value = row[field] || '';
+          return String(value);
+        };
+        
+        const newZip = new JSZip();
+        let totalPlaceholdersReplaced = 0;
+        const files = Object.keys(templateZip.files);
+        
+        for (const filePath of files) {
+          if (filePath === 'ppt/slides/slide1.xml' || filePath === 'ppt/slides/_rels/slide1.xml.rels') {
+            continue;
+          }
+          const file = templateZip.files[filePath];
+          if (file.dir) {
+            newZip.folder(filePath);
+          } else if (filePath.toLowerCase().endsWith('.xml') || filePath.toLowerCase().endsWith('.rels')) {
+            const content = await file.async('string');
+            newZip.file(filePath, content);
+          } else {
+            const buffer = await file.async('uint8array');
+            newZip.file(filePath, buffer);
+          }
+        }
+        
+        const originalSlideContent = await templateZip.file('ppt/slides/slide1.xml')?.async('string');
+        const originalSlideRelsContent = await templateZip.file('ppt/slides/_rels/slide1.xml.rels')?.async('string');
+        const originalPresContent = await templateZip.file('ppt/presentation.xml')?.async('string');
+        const originalPresRelsContent = await templateZip.file('ppt/_rels/presentation.xml.rels')?.async('string');
+        
+        if (!originalSlideContent) {
+          throw new Error('无法读取幻灯片文件');
+        }
+        
+        let slideId = 314;
+        let relId = 10;
+        let sldIdLst = '';
+        let slideRelEntries = [];
+        
+        matchedImages = 0;
+        unmatchedCodes = [];
+        
+        for (let i = 0; i < dataRows.length; i++) {
+          const dataRow = dataRows[i];
+          const result = smartReplaceAllPlaceholders(originalSlideContent, placeholderMap, dataRow, getValue);
+          
+          const slideNum = i + 1;
+          const slideName = `ppt/slides/slide${slideNum}.xml`;
+          const slideRelsName = `ppt/slides/_rels/slide${slideNum}.xml.rels`;
+          
+          let slideRelsContent = originalSlideRelsContent || '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>';
+          
+          if (includeImages && imageRawData && Object.keys(imageRawData).length > 0) {
+            const code = dataRow['编号'] || '';
+            
+            if (code && imageRawData[code]) {
+              const imageData = imageRawData[code];
+              const imageName = `product_${slideNum}.${imageData.type}`;
+              
+              newZip.file(`ppt/media/${imageName}`, imageData.data);
+              
+              const originalMediaRegex = /<Relationship[^>]*Type="[^"]*image[^"]*"[^>]*Target="([^"]+)"/i;
+              const match = slideRelsContent.match(originalMediaRegex);
+              if (match) {
+                slideRelsContent = slideRelsContent.replace(
+                  /(<Relationship[^>]*Type="[^"]*image[^"]*"[^>]*Target=")[^"]+(")/i,
+                  `$1../media/${imageName}$2`
+                );
+              } else {
+                const relIdMatch = slideRelsContent.match(/Id="rId(\d+)"/g);
+                const maxRelId = relIdMatch ? Math.max(...relIdMatch.map(m => parseInt(m.match(/\d+/)[0]))) : 0;
+                const newRelId = maxRelId + 1;
+                slideRelsContent = slideRelsContent.replace(
+                  /<\/Relationships>/,
+                  `<Relationship Id="rId${newRelId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/${imageName}"/></Relationships>`
+                );
+              }
+              
+              matchedImages++;
+            } else {
+              if (code && !unmatchedCodes.includes(code)) {
+                unmatchedCodes.push(code);
+              }
+            }
+          }
+          
+          newZip.file(slideName, result.content);
+          newZip.file(slideRelsName, slideRelsContent);
+          
+          const progress = ((i + 1) / totalSlides) * 100;
+          document.getElementById('pptProgressFill').style.width = `${progress}%`;
+          document.getElementById('pptProgressText').textContent = `进度: ${i + 1} / ${totalSlides}`;
+          document.getElementById('processingStep').textContent = `正在生成第 ${i + 1}/${totalSlides} 页...`;
+          
+          totalPlaceholdersReplaced += result.count;
+          
+          sldIdLst += `<p:sldId id="${slideId + i}" r:id="rId${relId + i}"/>`;
+          slideRelEntries.push(`<Relationship Id="rId${relId + i}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${slideNum}.xml"/>`);
+        }
+        
+        let newPresContent = originalPresContent;
+        const sldIdLstMatch = newPresContent.match(/<p:sldIdLst>(.*?)<\/p:sldIdLst>/s);
+        if (sldIdLstMatch) {
+          newPresContent = newPresContent.replace(sldIdLstMatch[0], `<p:sldIdLst>${sldIdLst}</p:sldIdLst>`);
+        }
+        newZip.file('ppt/presentation.xml', newPresContent);
+        
+        let newPresRelsContent = originalPresRelsContent;
+        const relationshipsMatch = newPresRelsContent.match(/<Relationships[^>]*>(.*?)<\/Relationships>/s);
+        if (relationshipsMatch) {
+          const filteredContent = relationshipsMatch[1].replace(/<Relationship[^>]*Target="slides\/slide1\.xml"[^>]*\/>/g, '');
+          const newContent = filteredContent + slideRelEntries.join('');
+          newPresRelsContent = newPresRelsContent.replace(relationshipsMatch[1], newContent);
+        }
+        newZip.file('ppt/_rels/presentation.xml.rels', newPresRelsContent);
+        
+        document.getElementById('processingStep').textContent = '正在生成文件...';
+        
+        const blob = await newZip.generateAsync({ 
+          type: 'blob', 
+          mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          compression: 'DEFLATE'
+        });
+        
+        generatedPptBlob = blob;
+        
+        document.getElementById('processingStep').textContent = '生成完成';
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        document.getElementById('processing-section').classList.add('hidden');
+        document.getElementById('result-section').classList.remove('hidden');
+        
+        document.getElementById('resultDataCount').textContent = `已生成 ${dataRows.length} 页产品展示`;
+        document.getElementById('resultImageMatch').textContent = matchedImages > 0 ? `✅ 成功匹配 ${matchedImages} 张图片` : '';
+        document.getElementById('resultDebug').textContent = `替换了 ${totalPlaceholdersReplaced} 个占位符，文件大小: ${blob.size} bytes`;
+        
+        if (unmatchedCodes.length > 0) {
+          document.getElementById('unmatchedSection').classList.remove('hidden');
+          const unmatchedList = document.getElementById('unmatchedList');
+          unmatchedList.innerHTML = '';
+          unmatchedCodes.forEach(code => {
+            const span = document.createElement('span');
+            span.className = 'unmatched-code';
+            span.textContent = code;
+            unmatchedList.appendChild(span);
+          });
+        } else {
+          document.getElementById('unmatchedSection').classList.add('hidden');
+        }
+        
+      } catch (error) {
+        console.error('生成PPT失败:', error);
+        alert('生成PPT失败：' + error.message);
+        document.getElementById('processing-section').classList.add('hidden');
+        document.getElementById('upload-section').classList.remove('hidden');
+      }
+    }
+    
+    function downloadPPT() {
+      if (!generatedPptBlob) {
+        alert('请先生成PPT');
+        return;
+      }
+      
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(generatedPptBlob);
+      link.download = '产品展示PPT.pptx';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    }
+    
+    function restart() {
+      templateFile = null;
+      excelFile = null;
+      imageFile = null;
+      sourceData = [];
+      imageMap = {};
+      imageRawData = {};
+      generatedPptBlob = null;
+      isImagesReady = false;
+      matchedImages = 0;
+      unmatchedCodes = [];
+      
+      document.getElementById('templateInput').value = '';
+      document.getElementById('excelInput').value = '';
+      document.getElementById('imageInput').value = '';
+      
+      document.getElementById('templateFileName').textContent = '上传自定义模板';
+      document.getElementById('excelFileName').textContent = '点击上传Excel文件';
+      document.getElementById('imageFileName').textContent = '点击上传图片压缩包';
+      
+      document.getElementById('defaultTemplateOption').classList.add('active');
+      document.getElementById('customTemplateOption').classList.remove('active');
+      document.getElementById('templateStatus').classList.remove('hidden');
+      
+      document.getElementById('removeTemplateBtn').classList.add('hidden');
+      document.getElementById('removeExcelBtn').classList.add('hidden');
+      document.getElementById('removeImageBtn').classList.add('hidden');
+      document.getElementById('matchInfo').classList.add('hidden');
+      document.getElementById('imageProgressContainer').classList.add('hidden');
+      document.getElementById('unmatchedSection').classList.add('hidden');
+      
+      document.getElementById('supplierPriceInput').value = '供应商成本价 / 0.75';
+      document.getElementById('dropshipPriceInput').value = '一件代发成本价 / 0.75';
+      document.getElementById('includeImages').checked = false;
+      
+      document.getElementById('result-section').classList.add('hidden');
+      document.getElementById('upload-section').classList.remove('hidden');
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      loadDefaultTemplate();
+    });
+  </script>
+</body>
+</html>

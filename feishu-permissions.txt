@@ -1,0 +1,21 @@
+# 飞书多维表格上传权限配置
+
+## 必填权限（必须添加）
+base:table:read
+base:table:write
+base:record:read
+base:record:write
+base:record:create
+base:field:read
+base:field:write
+
+## 可选权限（如需处理附件）
+drive:file:upload
+drive:file:download
+
+## 配置步骤
+1. 访问 https://open.feishu.cn/app
+2. 选择您的应用（产品数据自动化）
+3. 进入「权限管理」
+4. 在搜索框中粘贴上面的权限名称，逐个添加
+5. 进入「版本管理与发布」，创建版本并发布

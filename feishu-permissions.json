@@ -1,0 +1,75 @@
+{
+  "app_info": {
+    "app_id": "cli_a97ed9701c39dcee",
+    "app_name": "产品数据自动化",
+    "description": "上传Excel/CSV数据到飞书多维表格"
+  },
+  "required_permissions": [
+    {
+      "permission_name": "base:table:read",
+      "description": "读取多维表格的表格信息",
+      "scope": "应用",
+      "status": "需要启用"
+    },
+    {
+      "permission_name": "base:table:write",
+      "description": "写入多维表格的表格信息",
+      "scope": "应用",
+      "status": "需要启用"
+    },
+    {
+      "permission_name": "base:record:read",
+      "description": "读取多维表格的记录数据",
+      "scope": "应用",
+      "status": "需要启用"
+    },
+    {
+      "permission_name": "base:record:write",
+      "description": "写入多维表格的记录数据",
+      "scope": "应用",
+      "status": "需要启用"
+    },
+    {
+      "permission_name": "base:record:create",
+      "description": "创建多维表格的记录",
+      "scope": "应用",
+      "status": "需要启用"
+    },
+    {
+      "permission_name": "base:field:read",
+      "description": "读取多维表格的字段信息",
+      "scope": "应用",
+      "status": "需要启用"
+    },
+    {
+      "permission_name": "base:field:write",
+      "description": "写入多维表格的字段信息",
+      "scope": "应用",
+      "status": "需要启用"
+    },
+    {
+      "permission_name": "drive:file:upload",
+      "description": "上传文件到云文档",
+      "scope": "应用",
+      "status": "可选"
+    },
+    {
+      "permission_name": "drive:file:download",
+      "description": "下载云文档中的文件",
+      "scope": "应用",
+      "status": "可选"
+    }
+  ],
+  "setup_steps": [
+    "1. 访问 https://open.feishu.cn/app",
+    "2. 选择您的应用",
+    "3. 进入「权限管理」",
+    "4. 搜索并添加上述权限",
+    "5. 进入「版本管理与发布」",
+    "6. 创建版本并发布到企业内部"
+  ],
+  "api_endpoints": {
+    "get_token": "POST /open-apis/auth/v3/app_access_token/internal",
+    "batch_create_records": "POST /open-apis/bitable/v1/apps/{base_token}/tables/{table_id}/records/batch_create"
+  }
+}

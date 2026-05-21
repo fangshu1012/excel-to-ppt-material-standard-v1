@@ -1,0 +1,48 @@
+:root {
+  --ink: #050505;
+  --muted: #5f6064;
+  --paper: #ffffff;
+  --soft: #f1f1f1;
+  --line: #111111;
+  --blue: #2725d8;
+  --green: #116f57;
+  --orange: #ff8128;
+  --coral: #f55237;
+  --yellow: #ffc845;
+  --pink: #e579db;
+  --shadow: 0 26px 65px rgba(0, 0, 0, 0.16);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  overflow-x: hidden;
+  color: var(--ink);
+  background: var(--paper);
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+button,
+a {
+  color: inherit;
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  text-decoration: none;
+}

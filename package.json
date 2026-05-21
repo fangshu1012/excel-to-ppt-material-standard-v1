@@ -1,0 +1,26 @@
+{
+  "name": "material-standard-automation",
+  "version": "1.0.0",
+  "description": "标品输入输出自动化流程网站",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "element-plus": "^2.6.3",
+    "exceljs": "^4.4.0",
+    "express": "^5.2.1",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
+    "jszip": "^3.10.1",
+    "multer": "^2.1.1",
+    "vue": "^3.4.21",
+    "xlsx": "^0.18.5",
+    "xlsx-style": "^0.8.13"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "vite": "^5.2.0"
+  }
+}
