@@ -598,7 +598,10 @@ const downloadExcel = async () => {
         };
       });
       
-      const sortedData = [...rawData.value].sort((a, b) => {
+      const sortedData = [...rawData.value].map((item, index) => ({
+        ...item,
+        _originalIndex: index
+      })).sort((a, b) => {
         const priceA = parseFloat(a['供货价报价'] || a['供货价'] || 0);
         const priceB = parseFloat(b['供货价报价'] || b['供货价'] || 0);
         return priceA - priceB;
@@ -617,12 +620,13 @@ const downloadExcel = async () => {
         let imageData = null;
         
         if (includeImages.value) {
+          const originalIndex = row._originalIndex;
           if (imageMap.value[编号]) {
             imageData = imageMap.value[编号];
             console.log(`第${rowIndex}行: 按编号匹配成功 - ${编号}`);
-          } else if (imageMap.value[`row_${dataIndex + 1}`]) {
-            imageData = imageMap.value[`row_${dataIndex + 1}`];
-            console.log(`第${rowIndex}行: 按行号匹配成功 - row_${dataIndex + 1}`);
+          } else if (imageMap.value[`row_${originalIndex + 1}`]) {
+            imageData = imageMap.value[`row_${originalIndex + 1}`];
+            console.log(`第${rowIndex}行: 按原始行号匹配成功 - row_${originalIndex + 1} (排序后第${dataIndex + 1}行)`);
           } else {
             const imageKeys = Object.keys(imageMap.value);
             const matchedKey = imageKeys.find(key => key.includes(编号) || 编号.includes(key));
@@ -684,7 +688,6 @@ const downloadExcel = async () => {
             console.log(`尝试嵌入图片到第${rowIndex}行...`);
             
             const img = new Image();
-            img.crossOrigin = 'anonymous';
             
             await new Promise((resolve, reject) => {
               img.onload = resolve;
@@ -737,12 +740,14 @@ const downloadExcel = async () => {
       const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
+      link.href = url;
       link.download = '推品表格.xlsx';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
       console.log('download triggered');
     } catch (error) {
       console.error('Error in downloadExcel:', error);
